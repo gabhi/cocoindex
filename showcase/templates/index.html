@@ -62,6 +62,96 @@
         </section>
       </div>
     </div>
+
+    <div class="demo">
+      <h2>Embed &amp; Search</h2>
+      <p class="hint">
+        Chunk with <code>RecursiveSplitter</code>, embed with <code>SentenceTransformerEmbedder</code>
+        (<code>all-MiniLM-L6-v2</code>), and rank with an embedded LanceDB table &mdash; the same building
+        blocks as the <code>text_embedding_lancedb</code> / <code>code_embedding_lancedb</code> examples.
+        First run downloads the model, so it may take a moment.
+      </p>
+      <div class="demo-grid">
+        <section class="panel">
+          <textarea id="embed-text">{{ embed_search_sample_text }}</textarea>
+          <div class="controls">
+            <label>Language
+              <select id="embed-language">
+                {% for value, label in splitter_languages %}
+                <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <input id="embed-query" type="text" placeholder="Search query" value="{{ embed_search_sample_query }}" style="flex:1; min-width:200px;" />
+            <button class="run" id="embed-run">Search</button>
+          </div>
+        </section>
+        <section class="panel">
+          <div id="embed-results" class="result-box"><p class="empty">Ranked chunks will show up here.</p></div>
+        </section>
+      </div>
+    </div>
+
+    <div class="demo">
+      <h2>Code Summarizer</h2>
+      <p class="hint">
+        LLM structured extraction with <code>instructor</code> + <code>litellm</code>, the same technique as the
+        <code>multi_codebase_summarization</code> example. Needs an LLM API key configured on the server
+        (default model: <code>gemini/gemini-2.5-flash</code>, set via <code>LLM_MODEL</code>).
+      </p>
+      <div class="demo-grid">
+        <section class="panel">
+          <textarea id="summarize-text">{{ summarize_sample_code }}</textarea>
+          <div class="controls">
+            <button class="run" id="summarize-run">Summarize it</button>
+          </div>
+        </section>
+        <section class="panel">
+          <div id="summarize-results" class="result-box"><p class="empty">The structured summary will show up here.</p></div>
+        </section>
+      </div>
+    </div>
+
+    <div class="demo">
+      <h2>PDF &rarr; Markdown</h2>
+      <p class="hint">
+        Exact approach used by the <code>pdf_to_markdown</code> example: <code>docling</code>'s
+        <code>DocumentConverter</code> exports a Markdown document. No LLM or database involved.
+        First run downloads layout models, so it may take a moment.
+      </p>
+      <div class="demo-grid">
+        <section class="panel">
+          <input id="pdf-file" type="file" accept="application/pdf" />
+          <div class="controls">
+            <button class="run" id="pdf-run">Convert it</button>
+          </div>
+        </section>
+        <section class="panel">
+          <div id="pdf-results" class="result-box"><p class="empty">Converted Markdown will show up here.</p></div>
+        </section>
+      </div>
+    </div>
+
+    <div class="demo">
+      <h2>Patient Intake Extraction</h2>
+      <p class="hint">
+        LLM structured extraction with DSPy, matching <code>patient_intake_extraction_dspy</code> (the BAML
+        variant needs a codegen build step, so it's gallery-only below). Upload a patient intake form PDF.
+        Needs an LLM API key on the server (default model: <code>gemini/gemini-2.5-flash</code>, set via
+        <code>PATIENT_INTAKE_LLM_MODEL</code>).
+      </p>
+      <div class="demo-grid">
+        <section class="panel">
+          <input id="patient-file" type="file" accept="application/pdf" />
+          <div class="controls">
+            <button class="run" id="patient-run">Extract it</button>
+          </div>
+        </section>
+        <section class="panel">
+          <div id="patient-results" class="result-box"><p class="empty">Extracted fields will show up here.</p></div>
+        </section>
+      </div>
+    </div>
   </section>
 
   <section id="tab-gallery" class="tab-panel">

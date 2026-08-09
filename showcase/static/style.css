@@ -131,12 +131,18 @@ textarea {
 }
 
 select,
-input[type="number"] {
+input[type="number"],
+input[type="text"] {
   background: #0f172a;
   color: #f8fafc;
   border: 1px solid #334155;
   border-radius: 6px;
   padding: 0.4rem 0.5rem;
+}
+
+input[type="file"] {
+  color: #cbd5e1;
+  font-size: 0.85rem;
 }
 
 button.run {

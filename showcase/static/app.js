@@ -107,8 +107,183 @@ function initMarkdownDemo() {
   run();
 }
 
+function initEmbedSearchDemo() {
+  const runBtn = document.getElementById("embed-run");
+  const results = document.getElementById("embed-results");
+  if (!runBtn) return;
+
+  async function run() {
+    runBtn.disabled = true;
+    runBtn.textContent = "Searching...";
+    results.innerHTML = '<p class="empty">Embedding (first run downloads the model, this can take a minute)...</p>';
+    try {
+      const res = await fetch("/api/embed-search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: document.getElementById("embed-text").value,
+          query: document.getElementById("embed-query").value,
+          language: document.getElementById("embed-language").value,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        results.innerHTML = `<p class="error">${data.detail || "Something went wrong."}</p>`;
+        return;
+      }
+      if (data.hits.length === 0) {
+        results.innerHTML = '<p class="empty">No matches found.</p>';
+        return;
+      }
+      results.innerHTML = data.hits
+        .map(
+          (h) => `
+        <div class="chunk-card">
+          <div class="chunk-meta">score ${h.score.toFixed(3)} · chars ${h.char_start}-${h.char_end} · lines ${h.line_start}-${h.line_end}</div>
+          <div class="chunk-text"></div>
+        </div>
+      `
+        )
+        .join("");
+      document.querySelectorAll("#embed-results .chunk-text").forEach((el, i) => {
+        el.textContent = data.hits[i].text;
+      });
+    } catch (err) {
+      results.innerHTML = `<p class="error">${err}</p>`;
+    } finally {
+      runBtn.disabled = false;
+      runBtn.textContent = "Search";
+    }
+  }
+
+  runBtn.addEventListener("click", run);
+}
+
+function initSummarizeDemo() {
+  const runBtn = document.getElementById("summarize-run");
+  const results = document.getElementById("summarize-results");
+  if (!runBtn) return;
+
+  async function run() {
+    runBtn.disabled = true;
+    runBtn.textContent = "Summarizing...";
+    results.innerHTML = '<p class="empty">Calling the LLM...</p>';
+    try {
+      const res = await fetch("/api/summarize-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: document.getElementById("summarize-text").value }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        results.innerHTML = `<p class="error">${data.detail || "Something went wrong."}</p>`;
+        return;
+      }
+      const classes = data.public_classes
+        .map((c) => `<li><b>${c.name}</b> — ${c.summary}</li>`)
+        .join("");
+      const functions = data.public_functions
+        .map((f) => `<li><b>${f.name}</b> — ${f.summary}</li>`)
+        .join("");
+      results.innerHTML = `
+        <div class="chunk-card">
+          <div class="chunk-meta">Summary</div>
+          <div class="chunk-text">${data.summary}</div>
+        </div>
+        ${classes ? `<div class="chunk-card"><div class="chunk-meta">Classes</div><ul>${classes}</ul></div>` : ""}
+        ${functions ? `<div class="chunk-card"><div class="chunk-meta">Functions</div><ul>${functions}</ul></div>` : ""}
+      `;
+    } catch (err) {
+      results.innerHTML = `<p class="error">${err}</p>`;
+    } finally {
+      runBtn.disabled = false;
+      runBtn.textContent = "Summarize it";
+    }
+  }
+
+  runBtn.addEventListener("click", run);
+}
+
+function initPdfToMarkdownDemo() {
+  const runBtn = document.getElementById("pdf-run");
+  const results = document.getElementById("pdf-results");
+  const fileInput = document.getElementById("pdf-file");
+  if (!runBtn) return;
+
+  async function run() {
+    const file = fileInput.files[0];
+    if (!file) {
+      results.innerHTML = '<p class="error">Choose a PDF file first.</p>';
+      return;
+    }
+    runBtn.disabled = true;
+    runBtn.textContent = "Converting...";
+    results.innerHTML = '<p class="empty">Converting (first run downloads layout models, this can take a minute)...</p>';
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/pdf-to-markdown", { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) {
+        results.innerHTML = `<p class="error">${data.detail || "Something went wrong."}</p>`;
+        return;
+      }
+      results.innerHTML = '<div class="chunk-card"><div class="chunk-text"></div></div>';
+      results.querySelector(".chunk-text").textContent = data.markdown;
+    } catch (err) {
+      results.innerHTML = `<p class="error">${err}</p>`;
+    } finally {
+      runBtn.disabled = false;
+      runBtn.textContent = "Convert it";
+    }
+  }
+
+  runBtn.addEventListener("click", run);
+}
+
+function initPatientIntakeDemo() {
+  const runBtn = document.getElementById("patient-run");
+  const results = document.getElementById("patient-results");
+  const fileInput = document.getElementById("patient-file");
+  if (!runBtn) return;
+
+  async function run() {
+    const file = fileInput.files[0];
+    if (!file) {
+      results.innerHTML = '<p class="error">Choose a PDF file first.</p>';
+      return;
+    }
+    runBtn.disabled = true;
+    runBtn.textContent = "Extracting...";
+    results.innerHTML = '<p class="empty">Calling the LLM...</p>';
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/patient-intake", { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) {
+        results.innerHTML = `<p class="error">${data.detail || "Something went wrong."}</p>`;
+        return;
+      }
+      results.innerHTML = '<div class="chunk-card"><div class="chunk-text"></div></div>';
+      results.querySelector(".chunk-text").textContent = JSON.stringify(data.patient, null, 2);
+    } catch (err) {
+      results.innerHTML = `<p class="error">${err}</p>`;
+    } finally {
+      runBtn.disabled = false;
+      runBtn.textContent = "Extract it";
+    }
+  }
+
+  runBtn.addEventListener("click", run);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   initTabs();
   initSplitterDemo();
   initMarkdownDemo();
+  initEmbedSearchDemo();
+  initSummarizeDemo();
+  initPdfToMarkdownDemo();
+  initPatientIntakeDemo();
 });
