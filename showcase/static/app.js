@@ -172,7 +172,10 @@ function initSummarizeDemo() {
       const res = await fetch("/api/summarize-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: document.getElementById("summarize-text").value }),
+        body: JSON.stringify({
+          text: document.getElementById("summarize-text").value,
+          api_key: document.getElementById("summarize-api-key").value || null,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -259,6 +262,8 @@ function initPatientIntakeDemo() {
     try {
       const formData = new FormData();
       formData.append("file", file);
+      const apiKey = document.getElementById("patient-api-key").value;
+      if (apiKey) formData.append("api_key", apiKey);
       const res = await fetch("/api/patient-intake", { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) {

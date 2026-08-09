@@ -7,7 +7,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -176,6 +176,7 @@ class EmbedSearchResponse(BaseModel):
 
 class SummarizeRequest(BaseModel):
     text: str
+    api_key: str | None = None
 
 
 class ClassInfo(BaseModel):
@@ -222,18 +223,25 @@ def _check_upload(content: bytes, filename: str | None, suffix: str) -> None:
         )
 
 
-def _missing_llm_key_error(model: str) -> HTTPException | None:
+def _resolve_llm_key(model: str, user_key: str | None) -> str:
+    """Prefer a key the visitor typed in; fall back to a server-configured one."""
+    if user_key and user_key.strip():
+        return user_key.strip()
+
     provider = model.split("/", 1)[0]
     env_name = _PROVIDER_KEY_ENV.get(provider)
-    if env_name and not os.environ.get(env_name):
-        return HTTPException(
-            status_code=503,
-            detail=(
-                f"This demo needs an LLM API key on the server. "
-                f"Set {env_name} as an environment variable (model: {model})."
-            ),
-        )
-    return None
+    env_key = os.environ.get(env_name) if env_name else None
+    if env_key:
+        return env_key
+
+    raise HTTPException(
+        status_code=503,
+        detail=(
+            "This demo needs an LLM API key — enter your own key above, or "
+            f"the server admin can set {env_name or 'the provider API key'} "
+            f"as an environment variable (model: {model})."
+        ),
+    )
 
 
 # ============================================================================
@@ -297,19 +305,15 @@ def _get_instructor_client() -> Any:
     return _instructor_client
 
 
-_dspy_configured = False
 _patient_extractor: Any | None = None
 
 
 def _get_patient_extractor() -> Any:
-    global _dspy_configured, _patient_extractor
-    import dspy
-
-    if not _dspy_configured:
-        dspy.configure(lm=dspy.LM(PATIENT_INTAKE_LLM_MODEL))
-        _dspy_configured = True
-
+    """Build the ChainOfThought module once; the LM is bound per-request via
+    ``dspy.context(lm=...)`` so concurrent requests can use different keys."""
+    global _patient_extractor
     if _patient_extractor is None:
+        import dspy
 
         class PatientExtractionSignature(dspy.Signature):
             """Extract structured patient information from a medical intake form image."""
@@ -469,10 +473,7 @@ async def embed_search(req: EmbedSearchRequest) -> EmbedSearchResponse:
 @app.post("/api/summarize-code", response_model=CodeSummary)
 async def summarize_code(req: SummarizeRequest) -> CodeSummary:
     _check_text(req.text, max_length=20_000)
-
-    error = _missing_llm_key_error(CODE_SUMMARY_LLM_MODEL)
-    if error:
-        raise error
+    api_key = _resolve_llm_key(CODE_SUMMARY_LLM_MODEL, req.api_key)
 
     client = _get_instructor_client()
     prompt = f"""Analyze the following code and extract structured information.
@@ -489,6 +490,7 @@ Instructions:
     try:
         result = await client.chat.completions.create(
             model=CODE_SUMMARY_LLM_MODEL,
+            api_key=api_key,
             response_model=CodeSummary,
             messages=[{"role": "user", "content": prompt}],
         )
@@ -500,18 +502,19 @@ Instructions:
 
 
 @app.post("/api/patient-intake", response_model=PatientIntakeResponse)
-async def patient_intake(file: UploadFile = File(...)) -> PatientIntakeResponse:
+async def patient_intake(
+    file: UploadFile = File(...),
+    api_key: str | None = Form(None),
+) -> PatientIntakeResponse:
     content = await file.read()
     _check_upload(content, file.filename, ".pdf")
-
-    error = _missing_llm_key_error(PATIENT_INTAKE_LLM_MODEL)
-    if error:
-        raise error
+    resolved_key = _resolve_llm_key(PATIENT_INTAKE_LLM_MODEL, api_key)
 
     import dspy
     import pymupdf
 
     extractor = _get_patient_extractor()
+    lm = dspy.LM(PATIENT_INTAKE_LLM_MODEL, api_key=resolved_key)
 
     def _extract() -> dict[str, Any]:
         pdf_doc = pymupdf.open(stream=content, filetype="pdf")
@@ -522,7 +525,8 @@ async def patient_intake(file: UploadFile = File(...)) -> PatientIntakeResponse:
             ]
         finally:
             pdf_doc.close()
-        result = extractor(form_images=form_images)
+        with dspy.context(lm=lm):
+            result = extractor(form_images=form_images)
         return result.patient.model_dump(mode="json")
 
     try:

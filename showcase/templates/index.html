@@ -96,13 +96,15 @@
       <h2>Code Summarizer</h2>
       <p class="hint">
         LLM structured extraction with <code>instructor</code> + <code>litellm</code>, the same technique as the
-        <code>multi_codebase_summarization</code> example. Needs an LLM API key configured on the server
-        (default model: <code>gemini/gemini-2.5-flash</code>, set via <code>LLM_MODEL</code>).
+        <code>multi_codebase_summarization</code> example. Default model: <code>gemini/gemini-2.5-flash</code>.
+        Enter your own Gemini API key below, or the server admin can set <code>GEMINI_API_KEY</code> as a fallback.
+        Your key is sent with this request only and never stored.
       </p>
       <div class="demo-grid">
         <section class="panel">
           <textarea id="summarize-text">{{ summarize_sample_code }}</textarea>
           <div class="controls">
+            <input id="summarize-api-key" type="password" placeholder="Your LLM API key (optional if server has one)" autocomplete="off" style="flex:1; min-width:220px;" />
             <button class="run" id="summarize-run">Summarize it</button>
           </div>
         </section>
@@ -137,13 +139,14 @@
       <p class="hint">
         LLM structured extraction with DSPy, matching <code>patient_intake_extraction_dspy</code> (the BAML
         variant needs a codegen build step, so it's gallery-only below). Upload a patient intake form PDF.
-        Needs an LLM API key on the server (default model: <code>gemini/gemini-2.5-flash</code>, set via
-        <code>PATIENT_INTAKE_LLM_MODEL</code>).
+        Default model: <code>gemini/gemini-2.5-flash</code>. Enter your own Gemini API key below, or the server
+        admin can set <code>PATIENT_INTAKE_LLM_MODEL</code> / <code>GEMINI_API_KEY</code> as a fallback.
       </p>
       <div class="demo-grid">
         <section class="panel">
           <input id="patient-file" type="file" accept="application/pdf" />
           <div class="controls">
+            <input id="patient-api-key" type="password" placeholder="Your LLM API key (optional if server has one)" autocomplete="off" style="flex:1; min-width:220px;" />
             <button class="run" id="patient-run">Extract it</button>
           </div>
         </section>

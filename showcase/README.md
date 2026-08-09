@@ -35,10 +35,13 @@ what makes them viable as a public demo. Two need an LLM API key.
   which adds real build-pipeline risk for one demo; it's in the gallery
   instead.
 
-### LLM API keys
+### LLM API keys — bring your own, or configure a shared one
 
-Two demos call an LLM through `litellm`, which resolves the key from an
-environment variable based on the model's provider prefix:
+Both LLM demos have a password-style field where a visitor can paste their
+own API key; it's sent with that one request and never stored server-side
+(not logged, not written to disk). If the field is left blank, the demo
+falls back to a server-configured key, resolved via `litellm`'s
+provider-prefix convention:
 
 | Demo | Env var (model) | Default model |
 |---|---|---|
@@ -47,8 +50,8 @@ environment variable based on the model's provider prefix:
 
 Point either at `openai/gpt-4o-mini` (`OPENAI_API_KEY`) or
 `anthropic/claude-...` (`ANTHROPIC_API_KEY`) instead if you'd rather not use
-Gemini. Without the corresponding key set, both demos return a clear 503
-instead of crashing.
+Gemini as the fallback. If neither a visitor-supplied key nor a matching env
+var is available, both demos return a clear 503 instead of crashing.
 
 ### Resource notes
 
