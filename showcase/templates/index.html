@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>CocoIndex Showcase</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header>
+    <h1>CocoIndex Showcase</h1>
+    <p>Try a couple of CocoIndex's building blocks live, then browse all {{ examples | length }} example pipelines.</p>
+  </header>
+
+  <nav class="tabs">
+    <button class="active" data-target="tab-demos">Live Demos</button>
+    <button data-target="tab-gallery">All Examples ({{ examples | length }})</button>
+  </nav>
+
+  <section id="tab-demos" class="tab-panel active">
+    <div class="demo">
+      <h2>Text Splitter</h2>
+      <p class="hint">Powered by <code>cocoindex.ops.text.RecursiveSplitter</code> — syntax-aware chunking, no external services.</p>
+      <div class="demo-grid">
+        <section class="panel">
+          <textarea id="splitter-text">{{ splitter_sample_text }}</textarea>
+          <div class="controls">
+            <label>Language
+              <select id="splitter-language">
+                {% for value, label in splitter_languages %}
+                <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label>Chunk size
+              <input id="splitter-chunk-size" type="number" value="300" min="20" max="4000" />
+            </label>
+            <label>Overlap
+              <input id="splitter-chunk-overlap" type="number" value="50" min="0" max="2000" />
+            </label>
+            <button class="run" id="splitter-run">Chunk it</button>
+          </div>
+        </section>
+        <section class="panel">
+          <div id="splitter-results" class="result-box"><p class="empty">Results will show up here.</p></div>
+        </section>
+      </div>
+    </div>
+
+    <div class="demo">
+      <h2>Markdown &rarr; HTML</h2>
+      <p class="hint">The exact rendering approach from the <code>files_transform</code> example: <code>MarkdownIt("gfm-like").render(text)</code>.</p>
+      <div class="demo-grid">
+        <section class="panel">
+          <textarea id="markdown-text">{{ markdown_sample_text }}</textarea>
+          <div class="controls">
+            <button class="run" id="markdown-run">Render it</button>
+          </div>
+        </section>
+        <section class="panel">
+          <div id="markdown-results" class="result-box html-preview"><p class="empty">Rendered HTML will show up here.</p></div>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-gallery" class="tab-panel">
+    <p class="gallery-intro">
+      Every example lives in <a href="https://github.com/cocoindex-io/cocoindex/tree/main/examples" target="_blank">examples/</a> in the CocoIndex repo.
+      Most need external infrastructure (Postgres, Qdrant, Kafka, Neo4j, cloud storage, ...) so they aren't runnable from this page —
+      each card below is pulled live from the real README and source code so it stays in sync with the repo.
+    </p>
+    <div class="gallery-grid">
+      {% for ex in examples %}
+      <article class="example-card">
+        <h3>{{ ex.title }}</h3>
+        <p>{{ ex.description }}</p>
+        <details>
+          <summary>View {{ ex.code_filename }}{% if ex.code_truncated %} (excerpt){% endif %}</summary>
+          <pre><code>{{ ex.code_excerpt }}</code></pre>
+        </details>
+        <div class="links">
+          <a href="{{ ex.github_url }}" target="_blank">View on GitHub &rarr;</a>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <footer>
+    Built with <a href="https://github.com/cocoindex-io/cocoindex" target="_blank">CocoIndex</a>
+  </footer>
+  <script src="/static/app.js"></script>
+</body>
+</html>
